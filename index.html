@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Rain Countdown</title>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap" rel="stylesheet">
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem;
+      --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem; --space-20: 5rem;
+      --color-bg: #060913;
+      --color-surface: rgba(11, 17, 33, 0.72);
+      --color-surface-2: rgba(16, 24, 45, 0.78);
+      --color-surface-offset: rgba(21, 31, 58, 0.8);
+      --color-divider: rgba(138, 176, 255, 0.12);
+      --color-border: rgba(126, 175, 255, 0.18);
+      --color-text: #ecf4ff;
+      --color-text-muted: #9db4d8;
+      --color-text-faint: #6780a8;
+      --color-text-inverse: #08101f;
+      --color-primary: #52f7ff;
+      --color-primary-hover: #94fbff;
+      --color-primary-active: #1fcedc;
+      --color-secondary: #9b6bff;
+      --color-danger: #ff4d8d;
+      --radius-sm: 0.375rem; --radius-md: 0.75rem; --radius-lg: 1.125rem; --radius-xl: 1.5rem; --radius-full: 9999px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 14px 30px rgba(0,0,0,0.35);
+      --shadow-lg: 0 25px 80px rgba(0,0,0,0.5);
+      --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --font-body: 'Satoshi', Inter, sans-serif;
+      --font-display: 'Satoshi', Inter, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    body {
+      min-height: 100dvh;
+      overflow-x: hidden;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(82,247,255,0.09), transparent 30%),
+        radial-gradient(circle at 80% 15%, rgba(155,107,255,0.12), transparent 28%),
+        radial-gradient(circle at 60% 75%, rgba(255,77,141,0.08), transparent 26%),
+        linear-gradient(180deg, #05070d 0%, #060913 48%, #04060c 100%);
+    }
+    img, svg { display: block; max-width: 100%; }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; border: 0; }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+
+    .rain, .rain::before, .rain::after {
+      position: fixed; inset: 0; pointer-events: none; content: "";
+      background-image:
+        linear-gradient(transparent 0%, rgba(82,247,255,0.22) 48%, transparent 100%),
+        linear-gradient(transparent 0%, rgba(155,107,255,0.14) 50%, transparent 100%);
+      background-size: 3px 180px, 2px 140px;
+      background-position: 8% -20%, 68% -60%;
+      opacity: 0.24;
+      animation: rainfall 13s linear infinite;
+      filter: blur(0.2px);
+    }
+    .rain::before { background-position: 28% -10%, 88% -50%; animation-duration: 11s; opacity: 0.18; }
+    .rain::after { background-position: 48% -30%, 15% -80%; animation-duration: 15s; opacity: 0.14; }
+    @keyframes rainfall { from { transform: translateY(-8%); } to { transform: translateY(108%); } }
+
+    .shell {
+      position: relative;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: var(--space-6);
+      isolation: isolate;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      min-height: min(860px, calc(100dvh - 3rem));
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) 1fr;
+      border: 1px solid var(--color-border);
+      border-radius: 28px;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(8,12,24,0.84), rgba(8,12,24,0.68));
+      box-shadow: var(--shadow-lg), 0 0 0 1px rgba(82,247,255,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(22px);
+    }
+
+    .sidebar {
+      padding: var(--space-8);
+      background: linear-gradient(180deg, rgba(7, 12, 24, 0.96), rgba(9, 16, 31, 0.78));
+      border-right: 1px solid var(--color-divider);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .brand {
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+    .logo {
+      width: 44px; height: 44px; border-radius: 14px;
+      display: grid; place-items: center;
+      color: var(--color-primary);
+      background: linear-gradient(180deg, rgba(82,247,255,0.1), rgba(155,107,255,0.08));
+      border: 1px solid rgba(82,247,255,0.18);
+      box-shadow: inset 0 0 22px rgba(82,247,255,0.08), 0 0 18px rgba(82,247,255,0.12);
+    }
+    .brand-copy h1 { font-size: var(--text-lg); font-weight: 700; letter-spacing: 0.02em; }
+    .brand-copy p { color: var(--color-text-muted); font-size: var(--text-sm); margin-top: 0.15rem; }
+
+    .panel, .card {
+      background: linear-gradient(180deg, rgba(15, 22, 41, 0.9), rgba(10, 16, 29, 0.72));
+      border: 1px solid rgba(125, 170, 255, 0.16);
+      border-radius: var(--radius-xl);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), var(--shadow-md);
+    }
+
+    .auth-card { padding: var(--space-5); display: grid; gap: var(--space-4); }
+    .auth-card h2, .settings h2, .timeline h2 { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.16em; color: var(--color-text-muted); }
+
+    .field { display: grid; gap: var(--space-2); }
+    .field label { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-text-muted); }
+    .field input {
+      width: 100%; height: 50px; padding: 0 var(--space-4);
+      background: rgba(4, 8, 18, 0.64);
+      border: 1px solid rgba(126, 175, 255, 0.16);
+      border-radius: var(--radius-lg);
+    }
+    .field input::placeholder { color: var(--color-text-faint); }
+
+    .btn-row, .stack { display: grid; gap: var(--space-3); }
+    .btn {
+      min-height: 50px; padding: 0 var(--space-4); border-radius: var(--radius-lg);
+      display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+      font-size: var(--text-sm); font-weight: 700; letter-spacing: 0.02em;
+      transition: transform var(--transition-interactive), box-shadow var(--transition-interactive), border-color var(--transition-interactive), background var(--transition-interactive);
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: linear-gradient(90deg, rgba(82,247,255,0.92), rgba(112,191,255,0.92));
+      color: var(--color-text-inverse);
+      box-shadow: 0 0 24px rgba(82,247,255,0.22);
+    }
+    .btn-secondary {
+      background: rgba(155,107,255,0.12);
+      color: #d8c7ff;
+      border: 1px solid rgba(155,107,255,0.24);
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(126,175,255,0.12);
+      color: var(--color-text-muted);
+    }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 0.55rem; width: fit-content;
+      padding: 0.48rem 0.8rem; border-radius: var(--radius-full);
+      background: rgba(82,247,255,0.09); color: var(--color-primary); font-size: var(--text-xs);
+      text-transform: uppercase; letter-spacing: 0.15em; border: 1px solid rgba(82,247,255,0.16);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 14px currentColor; }
+    .muted { color: var(--color-text-muted); }
+    .tiny { color: var(--color-text-faint); font-size: var(--text-xs); line-height: 1.6; }
+
+    .settings { padding: var(--space-5); display: grid; gap: var(--space-4); }
+    .quick-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+    .mini {
+      padding: var(--space-4); border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(126,175,255,0.1);
+    }
+    .mini span { display: block; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-text-faint); }
+    .mini strong { display: block; margin-top: 0.35rem; font-size: var(--text-base); }
+
+    .main {
+      padding: var(--space-8);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: var(--space-6);
+      position: relative;
+    }
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center; gap: var(--space-4);
+    }
+    .topbar .actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+    .hero {
+      display: grid; gap: var(--space-4);
+      padding: var(--space-6);
+      border-radius: 26px;
+      background:
+        linear-gradient(135deg, rgba(82,247,255,0.1), rgba(155,107,255,0.08) 55%, rgba(255,77,141,0.08)),
+        rgba(10,14,28,0.66);
+      border: 1px solid rgba(126,175,255,0.16);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: ""; position: absolute; inset: auto -10% -35% auto; width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(82,247,255,0.18), transparent 60%);
+      filter: blur(8px);
+    }
+    .hero h2 { font-size: var(--text-xl); line-height: 1.04; max-width: 15ch; }
+    .hero p { max-width: 62ch; color: var(--color-text-muted); }
+
+    .count-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+    .time-card {
+      padding: var(--space-5); border-radius: 24px; min-height: 160px;
+      display: grid; align-content: end; gap: var(--space-2);
+      background: linear-gradient(180deg, rgba(11,17,33,0.88), rgba(9,14,27,0.7));
+      border: 1px solid rgba(130,179,255,0.16);
+      position: relative; overflow: hidden;
+    }
+    .time-card::before {
+      content: ""; position: absolute; inset: 0 auto auto 0; width: 100%; height: 3px;
+      background: linear-gradient(90deg, rgba(82,247,255,0.95), rgba(155,107,255,0.86), rgba(255,77,141,0.82));
+      opacity: 0.9;
+    }
+    .time-value {
+      font-size: clamp(2.2rem, 1.8rem + 2vw, 4rem);
+      line-height: 0.95; font-weight: 900; letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums lining-nums;
+      text-shadow: 0 0 22px rgba(82,247,255,0.16);
+    }
+    .time-label { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-text-faint); }
+
+    .footer-grid {
+      display: grid; grid-template-columns: 1.2fr 0.9fr; gap: var(--space-5);
+    }
+    .timeline, .account {
+      padding: var(--space-5); display: grid; gap: var(--space-4);
+    }
+    .event-list { display: grid; gap: var(--space-3); }
+    .event {
+      display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: start;
+      padding: var(--space-3); border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(126,175,255,0.08);
+    }
+    .event-mark {
+      width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center;
+      background: rgba(82,247,255,0.1); color: var(--color-primary); border: 1px solid rgba(82,247,255,0.14);
+    }
+    .message {
+      min-height: 24px; font-size: var(--text-sm); color: var(--color-primary);
+    }
+    .message.error { color: var(--color-danger); }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--color-divider); }
+      .count-grid, .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 720px) {
+      .shell { padding: var(--space-3); }
+      .sidebar, .main { padding: var(--space-5); }
+      .count-grid, .footer-grid, .quick-stats { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .topbar .actions { width: 100%; }
+      .topbar .actions .btn { flex: 1; }
+      .hero h2 { max-width: 100%; }
+      .time-card { min-height: 132px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rain, .rain::before, .rain::after { animation: none; }
+      .btn:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="rain"></div>
+  <div class="shell">
+    <div class="app">
+      <aside class="sidebar" aria-label="Countdown controls">
+        <div class="brand">
+          <div class="logo" aria-label="Neon Rain Countdown logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M5 7.5 12 3l7 4.5v8.8L12 21l-7-4.7V7.5Z"></path>
+              <path d="M8.5 9.3 12 7l3.5 2.3v5.3L12 17l-3.5-2.4V9.3Z"></path>
+            </svg>
+          </div>
+          <div class="brand-copy">
+            <h1>Neon Rain</h1>
+            <p>1000-day persistent countdown</p>
+          </div>
+        </div>
+
+        <section class="panel auth-card" aria-labelledby="auth-heading">
+          <h2 id="auth-heading">Login</h2>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" placeholder="Enter password" autocomplete="current-password" />
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="loginBtn">Login / Sign up</button>
+            <button class="btn btn-secondary" id="demoBtn">Use demo account</button>
+            <button class="btn btn-ghost hidden" id="logoutBtn">Logout</button>
+          </div>
+          <p class="message" id="authMessage" aria-live="polite"></p>
+          <p class="tiny">To keep the timer running across devices, add your Supabase project keys in the config block near the top of the script. Without Supabase, the timer still works in the current browser session.</p>
+        </section>
+
+        <section class="panel settings" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">Timer setup</h2>
+          <div class="field">
+            <label for="titleInput">Countdown title</label>
+            <input id="titleInput" type="text" placeholder="Project Zero" maxlength="40" />
+          </div>
+          <div class="field">
+            <label for="startDate">Start date</label>
+            <input id="startDate" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label for="daysInput">Total days</label>
+            <input id="daysInput" type="number" min="1" max="5000" value="1000" />
+          </div>
+          <div class="stack">
+            <button class="btn btn-primary" id="saveTimerBtn">Save countdown</button>
+            <button class="btn btn-ghost" id="resetNowBtn">Reset start to now</button>
+          </div>
+          <div class="quick-stats">
+            <div class="mini"><span>Status</span><strong id="statusText">Local mode</strong></div>
+            <div class="mini"><span>Persistence</span><strong id="syncText">Session only</strong></div>
+          </div>
+        </section>
+      </aside>
+
+      <main class="main" id="mainContent">
+        <header class="topbar">
+          <div>
+            <div class="status-badge"><span class="dot"></span><span id="liveLabel">Timer live</span></div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-ghost" id="themeBtn" aria-label="Switch theme">Theme</button>
+          </div>
+        </header>
+
+        <section class="hero">
+          <h2 id="heroTitle">1000 days. No drift. Always running.</h2>
+          <p id="heroCopy">Set a start date once, log in, and keep the same countdown moving. The interface is built with a sleek neon-rain aesthetic and a persistent account-ready flow.</p>
+        </section>
+
+        <section class="count-grid" aria-label="Countdown values">
+          <article class="time-card"><div class="time-value" id="daysValue">000</div><div class="time-label">Days left</div></article>
+          <article class="time-card"><div class="time-value" id="hoursValue">00</div><div class="time-label">Hours</div></article>
+          <article class="time-card"><div class="time-value" id="minutesValue">00</div><div class="time-label">Minutes</div></article>
+          <article class="time-card"><div class="time-value" id="secondsValue">00</div><div class="time-label">Seconds</div></article>
+        </section>
+
+        <section class="footer-grid">
+          <section class="card timeline" aria-labelledby="timeline-heading">
+            <h2 id="timeline-heading">Milestones</h2>
+            <div class="event-list" id="milestoneList"></div>
+          </section>
+          <section class="card account" aria-labelledby="account-heading">
+            <h2 id="account-heading">Account state</h2>
+            <div class="event-list">
+              <div class="event"><div class="event-mark">@</div><div><strong id="accountEmail">Guest session</strong><p class="tiny">Sign in to connect the timer to a real account.</p></div></div>
+              <div class="event"><div class="event-mark">T</div><div><strong id="targetDateText">No target saved yet</strong><p class="tiny">Your target is calculated from start date + total days.</p></div></div>
+              <div class="event"><div class="event-mark">S</div><div><strong id="savedStateText">Waiting for setup</strong><p class="tiny">The app updates every second and keeps the countdown anchored to the original start time.</p></div></div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      SUPABASE_URL: '',
+      SUPABASE_ANON_KEY: ''
+    };
+
+    const STORAGE_KEY = 'neon-rain-countdown-session';
+    const state = {
+      user: null,
+      timer: null,
+      interval: null,
+      supabase: null,
+      authReady: false,
+      theme: 'dark'
+    };
+
+    const els = {
+      email: document.getElementById('email'),
+      password: document.getElementById('password'),
+      loginBtn: document.getElementById('loginBtn'),
+      demoBtn: document.getElementById('demoBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      authMessage: document.getElementById('authMessage'),
+      titleInput: document.getElementById('titleInput'),
+      startDate: document.getElementById('startDate'),
+      daysInput: document.getElementById('daysInput'),
+      saveTimerBtn: document.getElementById('saveTimerBtn'),
+      resetNowBtn: document.getElementById('resetNowBtn'),
+      statusText: document.getElementById('statusText'),
+      syncText: document.getElementById('syncText'),
+      heroTitle: document.getElementById('heroTitle'),
+      daysValue: document.getElementById('daysValue'),
+      hoursValue: document.getElementById('hoursValue'),
+      minutesValue: document.getElementById('minutesValue'),
+      secondsValue: document.getElementById('secondsValue'),
+      milestoneList: document.getElementById('milestoneList'),
+      accountEmail: document.getElementById('accountEmail'),
+      targetDateText: document.getElementById('targetDateText'),
+      savedStateText: document.getElementById('savedStateText'),
+      liveLabel: document.getElementById('liveLabel'),
+      themeBtn: document.getElementById('themeBtn')
+    };
+
+    function pad(value, size = 2) {
+      return String(value).padStart(size, '0');
+    }
+
+    function formatDateTimeLocal(date) {
+      const d = new Date(date);
+      const y = d.getFullYear();
+      const m = pad(d.getMonth() + 1);
+      const day = pad(d.getDate());
+      const h = pad(d.getHours());
+      const min = pad(d.getMinutes());
+      return `${y}-${m}-${day}T${h}:${min}`;
+    }
+
+    function formatLong(date) {
+      return new Intl.DateTimeFormat(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      }).format(new Date(date));
+    }
+
+    function setMessage(text, type = 'info') {
+      els.authMessage.textContent = text || '';
+      els.authMessage.className = type === 'error' ? 'message error' : 'message';
+    }
+
+    function setTheme(theme) {
+      state.theme = theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      els.themeBtn.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+    }
+
+    function saveSession() {
+      const payload = {
+        timer: state.timer,
+        user: state.user ? { email: state.user.email, id: state.user.id || null } : null,
+        theme: state.theme
+      };
+      try { window.name = JSON.stringify(payload); } catch {}
+    }
+
+    function loadSession() {
+      try {
+        if (!window.name) return;
+        const payload = JSON.parse(window.name);
+        if (payload?.timer) state.timer = payload.timer;
+        if (payload?.user) state.user = payload.user;
+        if (payload?.theme) state.theme = payload.theme;
+      } catch {}
+    }
+
+    async function loadSupabase() {
+      if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) return null;
+      await import('https://esm.sh/@supabase/supabase-js@2');
+      const { createClient } = window.supabase || globalThis.supabase;
+      if (!createClient) return null;
+      return createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    }
+
+    async function initBackend() {
+      try {
+        if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
+          els.statusText.textContent = 'Local mode';
+          els.syncText.textContent = 'Session only';
+          return;
+        }
+        const mod = await import('https://esm.sh/@supabase/supabase-js@2');
+        state.supabase = mod.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        state.authReady = true;
+        els.statusText.textContent = 'Cloud mode';
+        els.syncText.textContent = 'Supabase connected';
+        const { data } = await state.supabase.auth.getUser();
+        if (data?.user) {
+          state.user = { email: data.user.email, id: data.user.id };
+          await loadRemoteTimer();
+        }
+      } catch (error) {
+        els.statusText.textContent = 'Backend offline';
+        els.syncText.textContent = 'Using fallback';
+      }
+      renderAccount();
+    }
+
+    async function loginOrSignup() {
+      const email = els.email.value.trim();
+      const password = els.password.value;
+      if (!email || !password) {
+        setMessage('Enter an email and password.', 'error');
+        return;
+      }
+      if (!state.supabase) {
+        state.user = { email, id: 'local-user' };
+        setMessage('Logged in locally. Add Supabase keys for true cloud persistence.');
+        renderAccount();
+        saveSession();
+        return;
+      }
+      try {
+        setMessage('Signing in...');
+        let { data, error } = await state.supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          const signUp = await state.supabase.auth.signUp({ email, password });
+          if (signUp.error) throw signUp.error;
+          data = signUp.data;
+          setMessage('Account created. Check email confirmation settings in Supabase if required.');
+        } else {
+          setMessage('Logged in successfully.');
+        }
+        if (data?.user) state.user = { email: data.user.email, id: data.user.id };
+        await ensureTableHint();
+        await loadRemoteTimer();
+      } catch (error) {
+        setMessage(error.message || 'Login failed.', 'error');
+      }
+      renderAccount();
+      saveSession();
+    }
+
+    async function logout() {
+      if (state.supabase) await state.supabase.auth.signOut();
+      state.user = null;
+      setMessage('Logged out.');
+      renderAccount();
+      saveSession();
+    }
+
+    async function ensureTableHint() {
+      return true;
+    }
+
+    async function saveTimer() {
+      const title = (els.titleInput.value || '1000 Day Countdown').trim();
+      const totalDays = Math.max(1, Number(els.daysInput.value || 1000));
+      const startAt = els.startDate.value ? new Date(els.startDate.value).toISOString() : new Date().toISOString();
+      const targetAt = new Date(new Date(startAt).getTime() + totalDays * 24 * 60 * 60 * 1000).toISOString();
+      state.timer = { title, totalDays, startAt, targetAt, updatedAt: new Date().toISOString() };
+
+      if (state.supabase && state.user?.id) {
+        const payload = {
+          user_id: state.user.id,
+          title,
+          total_days: totalDays,
+          start_at: startAt,
+          target_at: targetAt,
+          updated_at: new Date().toISOString()
+        };
+        const { error } = await state.supabase.from('countdown_timers').upsert(payload, { onConflict: 'user_id' });
+        if (error) {
+          setMessage('Supabase save failed. Check the table SQL in the notes.', 'error');
+        } else {
+          setMessage('Countdown saved to Supabase.');
+        }
+      } else {
+        setMessage('Countdown saved in this session.');
+      }
+
+      renderTimer();
+      saveSession();
+    }
+
+    async function loadRemoteTimer() {
+      if (!state.supabase || !state.user?.id) return;
+      const { data, error } = await state.supabase
+        .from('countdown_timers')
+        .select('*')
+        .eq('user_id', state.user.id)
+        .maybeSingle();
+      if (!error && data) {
+        state.timer = {
+          title: data.title,
+          totalDays: data.total_days,
+          startAt: data.start_at,
+          targetAt: data.target_at,
+          updatedAt: data.updated_at
+        };
+      }
+      renderTimer();
+      saveSession();
+    }
+
+    function resetNow() {
+      els.startDate.value = formatDateTimeLocal(new Date());
+      setMessage('Start date set to now.');
+    }
+
+    function renderAccount() {
+      const signedIn = !!state.user;
+      els.accountEmail.textContent = signedIn ? state.user.email : 'Guest session';
+      els.savedStateText.textContent = state.timer ? `Saved ${state.supabase && signedIn ? 'to cloud' : 'in current session'}` : 'Waiting for setup';
+      els.loginBtn.classList.toggle('hidden', signedIn);
+      els.demoBtn.classList.toggle('hidden', signedIn);
+      els.logoutBtn.classList.toggle('hidden', !signedIn);
+      if (signedIn) {
+        els.statusText.textContent = state.supabase ? 'Signed in' : 'Local login';
+      }
+    }
+
+    function renderMilestones(totalDays, remainingDays) {
+      const checkpoints = [0, 250, 500, 750, totalDays];
+      const elapsed = totalDays - remainingDays;
+      els.milestoneList.innerHTML = checkpoints.map((point, idx) => {
+        const hit = elapsed >= point;
+        const label = point === totalDays ? 'Finish line' : `Day ${point}`;
+        return `<div class="event"><div class="event-mark">${idx + 1}</div><div><strong>${label}</strong><p class="tiny">${hit ? 'Reached' : `${Math.max(point - elapsed, 0)} days away`}</p></div></div>`;
+      }).join('');
+    }
+
+    function updateCountdown() {
+      if (!state.timer) {
+        els.daysValue.textContent = '1000';
+        els.hoursValue.textContent = '00';
+        els.minutesValue.textContent = '00';
+        els.secondsValue.textContent = '00';
+        return;
+      }
+      const now = Date.now();
+      const target = new Date(state.timer.targetAt).getTime();
+      const diff = Math.max(target - now, 0);
+      const totalSeconds = Math.floor(diff / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      els.daysValue.textContent = pad(days, 3);
+      els.hoursValue.textContent = pad(hours);
+      els.minutesValue.textContent = pad(minutes);
+      els.secondsValue.textContent = pad(seconds);
+      els.liveLabel.textContent = diff > 0 ? 'Timer live' : 'Countdown complete';
+      renderMilestones(Number(state.timer.totalDays), days);
+    }
+
+    function renderTimer() {
+      if (state.timer) {
+        els.titleInput.value = state.timer.title || '';
+        els.daysInput.value = state.timer.totalDays || 1000;
+        els.startDate.value = formatDateTimeLocal(state.timer.startAt);
+        els.heroTitle.textContent = `${state.timer.title} · ${state.timer.totalDays} days`;
+        els.targetDateText.textContent = `Ends ${formatLong(state.timer.targetAt)}`;
+      } else {
+        els.titleInput.value = '1000 Day Countdown';
+        els.daysInput.value = 1000;
+        els.startDate.value = formatDateTimeLocal(new Date());
+        els.heroTitle.textContent = '1000 days. No drift. Always running.';
+        els.targetDateText.textContent = 'No target saved yet';
+      }
+      renderAccount();
+      updateCountdown();
+    }
+
+    function bindEvents() {
+      els.loginBtn.addEventListener('click', loginOrSignup);
+      els.demoBtn.addEventListener('click', () => {
+        els.email.value = 'demo@neonrain.app';
+        els.password.value = 'demo12345';
+        loginOrSignup();
+      });
+      els.logoutBtn.addEventListener('click', logout);
+      els.saveTimerBtn.addEventListener('click', saveTimer);
+      els.resetNowBtn.addEventListener('click', resetNow);
+      els.themeBtn.addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'));
+    }
+
+    async function init() {
+      loadSession();
+      setTheme(state.theme || 'dark');
+      bindEvents();
+      renderTimer();
+      await initBackend();
+      if (!state.timer) resetNow();
+      clearInterval(state.interval);
+      state.interval = setInterval(updateCountdown, 1000);
+      updateCountdown();
+    }
+
+    init();
+  </script>
+
+  <!--
+    Supabase SQL setup:
+
+    create table if not exists public.countdown_timers (
+      user_id uuid primary key references auth.users(id) on delete cascade,
+      title text not null,
+      total_days integer not null default 1000,
+      start_at timestamptz not null,
+      target_at timestamptz not null,
+      updated_at timestamptz not null default now()
+    );
+
+    alter table public.countdown_timers enable row level security;
+
+    create policy "Users manage own timer"
+    on public.countdown_timers
+    for all
+    using (auth.uid() = user_id)
+    with check (auth.uid() = user_id);
+  -->
+</body>
+</html>
