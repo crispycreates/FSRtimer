@@ -313,7 +313,7 @@
             <button class="btn btn-ghost hidden" id="logoutBtn">Logout</button>
           </div>
           <p class="message" id="authMessage" aria-live="polite"></p>
-          <p class="tiny">To keep the timer running across devices, add your Supabase project keys in the config block near the top of the script. Without Supabase, the timer still works in the current browser session.</p>
+          <p class="tiny">Sign in with email + password. Your countdown is saved to your account so it picks up exactly where you left off — even on a new device.</p>
         </section>
 
         <section class="panel settings" aria-labelledby="settings-heading">
@@ -383,8 +383,8 @@
 
   <script>
     const CONFIG = {
-      SUPABASE_URL: '',
-      SUPABASE_ANON_KEY: ''
+      SUPABASE_URL: 'https://wurgfbjgatezlmtzoylm.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1cmdmYmpnYXRlemxtdHpveWxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDg5OTgsImV4cCI6MjA5Mjg4NDk5OH0.wxrrY6ZL5CcFCfziarIf-imG6jXadxmVKb4FLD6u2Vg'
     };
 
     const STORAGE_KEY = 'neon-rain-countdown-session';
@@ -474,14 +474,6 @@
       } catch {}
     }
 
-    async function loadSupabase() {
-      if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) return null;
-      await import('https://esm.sh/@supabase/supabase-js@2');
-      const { createClient } = window.supabase || globalThis.supabase;
-      if (!createClient) return null;
-      return createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-    }
-
     async function initBackend() {
       try {
         if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
@@ -490,7 +482,9 @@
           return;
         }
         const mod = await import('https://esm.sh/@supabase/supabase-js@2');
-        state.supabase = mod.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        state.supabase = mod.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+          auth: { persistSession: true, autoRefreshToken: true, storageKey: STORAGE_KEY }
+        });
         state.authReady = true;
         els.statusText.textContent = 'Cloud mode';
         els.syncText.textContent = 'Supabase connected';
@@ -500,6 +494,7 @@
           await loadRemoteTimer();
         }
       } catch (error) {
+        console.error('Supabase init failed:', error);
         els.statusText.textContent = 'Backend offline';
         els.syncText.textContent = 'Using fallback';
       }
@@ -515,7 +510,7 @@
       }
       if (!state.supabase) {
         state.user = { email, id: 'local-user' };
-        setMessage('Logged in locally. Add Supabase keys for true cloud persistence.');
+        setMessage('Logged in locally. Supabase not connected.');
         renderAccount();
         saveSession();
         return;
@@ -527,12 +522,11 @@
           const signUp = await state.supabase.auth.signUp({ email, password });
           if (signUp.error) throw signUp.error;
           data = signUp.data;
-          setMessage('Account created. Check email confirmation settings in Supabase if required.');
+          setMessage('Account created. If email confirmation is required, check your inbox.');
         } else {
           setMessage('Logged in successfully.');
         }
         if (data?.user) state.user = { email: data.user.email, id: data.user.id };
-        await ensureTableHint();
         await loadRemoteTimer();
       } catch (error) {
         setMessage(error.message || 'Login failed.', 'error');
@@ -544,13 +538,10 @@
     async function logout() {
       if (state.supabase) await state.supabase.auth.signOut();
       state.user = null;
+      state.timer = null;
       setMessage('Logged out.');
-      renderAccount();
+      renderTimer();
       saveSession();
-    }
-
-    async function ensureTableHint() {
-      return true;
     }
 
     async function saveTimer() {
@@ -571,12 +562,13 @@
         };
         const { error } = await state.supabase.from('countdown_timers').upsert(payload, { onConflict: 'user_id' });
         if (error) {
-          setMessage('Supabase save failed. Check the table SQL in the notes.', 'error');
+          console.error('Supabase save failed:', error);
+          setMessage('Save failed: ' + error.message, 'error');
         } else {
-          setMessage('Countdown saved to Supabase.');
+          setMessage('Countdown saved to your account.');
         }
       } else {
-        setMessage('Countdown saved in this session.');
+        setMessage('Sign in first to save your countdown to the cloud.', 'error');
       }
 
       renderTimer();
@@ -590,7 +582,11 @@
         .select('*')
         .eq('user_id', state.user.id)
         .maybeSingle();
-      if (!error && data) {
+      if (error) {
+        console.error('Load failed:', error);
+        return;
+      }
+      if (data) {
         state.timer = {
           title: data.title,
           totalDays: data.total_days,
@@ -699,26 +695,5 @@
 
     init();
   </script>
-
-  <!--
-    Supabase SQL setup:
-
-    create table if not exists public.countdown_timers (
-      user_id uuid primary key references auth.users(id) on delete cascade,
-      title text not null,
-      total_days integer not null default 1000,
-      start_at timestamptz not null,
-      target_at timestamptz not null,
-      updated_at timestamptz not null default now()
-    );
-
-    alter table public.countdown_timers enable row level security;
-
-    create policy "Users manage own timer"
-    on public.countdown_timers
-    for all
-    using (auth.uid() = user_id)
-    with check (auth.uid() = user_id);
-  -->
 </body>
 </html>
